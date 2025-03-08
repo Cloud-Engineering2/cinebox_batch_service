@@ -55,7 +55,7 @@ public class MovieBatchService {
     private String kmdbApiUrl;
     
     // KOBIS 영화 목록 개수 설정 (1 ~ 100)
-    @Value("${itemPerPage:70}")
+    @Value("${itemPerPage:100}")
     private int itemPerPage;
 
     // 매일 0시 30분 당일에 개봉하는 영화 개봉 상태 변경 (UPCOMING -> SHOWING) 
