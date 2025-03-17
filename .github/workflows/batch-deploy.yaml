@@ -1,4 +1,4 @@
-name: Deploy to AWS CI/CD
+name: Batch_service Deploy to AWS CI/CD
 
 on:
   workflow_dispatch:
