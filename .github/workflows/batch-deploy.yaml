@@ -43,6 +43,9 @@ jobs:
         run: |
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build and Push Docker Image
         env:
           ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
@@ -61,29 +64,36 @@ jobs:
         if: success()
         run: echo "Batch Service Docker image pushed successfully!"
 
-  # CD: 매니페스트 파일 업데이트 (주석 처리)
-  # cd:
-  #   name: Update Deployment with New Image Tag
-  #   needs: ci
-  #   runs-on: ubuntu-latest
+  # CD: 매니페스트 파일 업데이트 및 배포
+  cd:
+    name: Update Deployment with New Image Tag
+    needs: ci
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #     - name: Checkout manifest repository
-  #       uses: actions/checkout@v4
-  #       with:
-  #         repository: Cloud-Engineering2/cinebox-manifest
-  #         ref: main
-  #         token: ${{ secrets.GIT_TOKEN }}
+    steps:
+      - name: Checkout manifest repository
+        uses: actions/checkout@v4
+        with:
+          repository: Cloud-Engineering2/cinebox-manifest
+          ref: main
+          token: ${{ secrets.GIT_TOKEN }}
 
-  #     - name: Update image tag in deployment manifest
-  #       run: |
-  #         IMAGE_TAG=${{ github.sha }}
-  #         sed -i 's|image: .*$|image: "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}"|g' ./backend/deployment/cinebox-deployment.yaml
+      - name: Update image tag in deployment manifest
+        run: |
+          IMAGE_TAG=${{ env.COMMIT_HASH }}
+          sed -i 's|image: .*$|image: '"${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:${{ env.COMMIT_HASH }}"'|g' ./backend/deployment/cinebox-deployment.yaml
 
-  #     - name: Commit and push changes if necessary
-  #       run: |
-  #         git config --local user.email "${{ secrets.GIT_EMAIL }}"
-  #         git config --local user.name "CI Bot"
-  #         git add -A
-  #         git commit -m "Update backend image to new commit hash"
-  #         git push || git push --force
+      - name: Commit and push changes if necessary
+        run: |
+          git config --local user.email "${{ secrets.GIT_EMAIL }}"
+          git config --local user.name "CI Bot"
+          git add -A
+          git commit -m "Update backend image to new commit hash"
+          git push || git push --force
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f ./backend/deployment/cinebox-deployment.yaml
+
+      - name: Notify Success
+        run: echo "Deployment to Kubernetes completed successfully!"
