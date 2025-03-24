@@ -75,8 +75,8 @@ public class MovieBatchService {
         }
     }
     
-    // 매주 월요일 자정에 영화 목록 업데이트
-    @Scheduled(cron = "0 0 0 * * 1")
+    // 매일 자정에 영화 목록 업데이트
+    @Scheduled(cron = "0 0 0 * * ?")
     public void fetchAndSaveMovies() {
         log.info("Starting movie batch job...");
         
