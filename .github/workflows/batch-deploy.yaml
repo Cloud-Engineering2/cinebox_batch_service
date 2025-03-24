@@ -60,29 +60,28 @@ jobs:
         if: success()
         run: echo "Batch Service Docker image pushed successfully!"
 
-  # CD: 매니페스트 파일 업데이트 (주석 처리)
-  # cd:
-  #   name: Update Deployment with New Image Tag
-  #   needs: ci
-  #   runs-on: ubuntu-latest
-  #
-  #   steps:
-  #     - name: Checkout manifest repository
-  #       uses: actions/checkout@v4
-  #       with:
-  #         repository: Cloud-Engineering2/cinebox-manifest
-  #         ref: main
-  #         token: ${{ secrets.GIT_TOKEN }}
-  #
-  #     - name: Update image tag in deployment manifest
-  #       run: |
-  #         IMAGE_TAG=${{ github.sha }}
-  #         sed -i 's|image: .*$|image: "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}"|g' ./backend/deployment/cinebox-deployment.yaml
-  #
-  #     - name: Commit and push changes if necessary
-  #       run: |
-  #         git config --local user.email "${{ secrets.GIT_EMAIL }}"
-  #         git config --local user.name "CI Bot"
-  #         git add -A
-  #         git commit -m "Update backend image to new commit hash"
-  #         git push || git push --force
+  cd:
+    name: Update Deployment with New Image Tag
+    needs: ci
+    runs-on: ubuntu-latest
+  
+    steps:
+      - name: Checkout manifest repository
+        uses: actions/checkout@v4
+        with:
+          repository: Cloud-Engineering2/cinebox-manifest
+          ref: main
+          token: ${{ secrets.GIT_TOKEN }}
+  
+      - name: Update image tag in deployment manifest
+        run: |
+          IMAGE_TAG=${{ github.sha }}
+          sed -i 's|image: .*$|image: "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}"|g' ./overlays/prod/patch-batch-deployment.yaml
+  
+      - name: Commit and push changes if necessary
+        run: |
+          git config --local user.email "${{ secrets.GIT_EMAIL }}"
+          git config --local user.name "CI Bot"
+          git add -A
+          git commit -m "Update backend image to new commit hash"
+          git push || git push --force
